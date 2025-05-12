@@ -7,6 +7,7 @@ import Link from 'next/link';
 export default function ConfigurationPage() {
   const urlPatterns = [
     '{{base_url}}/api/1.0/full_metadata.php/{object_name}',
+ 'Custom URL',
     '{{base_url}}/api/1.0/index.php/skill/all',
   ];
 
@@ -15,11 +16,16 @@ export default function ConfigurationPage() {
   const [objectName, setObjectName] = useState('');
   const [assembledUrl, setAssembledUrl] = useState('');
   const [accessToken, setAccessToken] = useState(''); // State for access token for demonstration
+  const [apiData, setApiData] = useState<any>(null); // State to store API data
 
   useEffect(() => {
-    let url = selectedUrlPattern;
-    url = url.replace('{{base_url}}', baseUrl);
-    url = url.replace('{object_name}', objectName);
+    let url;
+    if (selectedUrlPattern === 'Custom URL') {
+      url = baseUrl;
+    } else {
+ url = selectedUrlPattern.replace('{{base_url}}', baseUrl);
+ url = url.replace('{object_name}', objectName);
+    }
     setAssembledUrl(url);
   }, [selectedUrlPattern, baseUrl, objectName]);
 
@@ -46,15 +52,31 @@ export default function ConfigurationPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('API response:', data);
+      const fetchedData = await response.json();
+      setApiData(fetchedData);
       // Handle the API response
+
+      // Send the fetched data to the server-side endpoint
+      const storeDataResponse = await fetch('/api/store-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fetchedData),
+      });
+
+      if (!storeDataResponse.ok) { throw new Error(`Error storing data: ${storeDataResponse.status}`); }
     } catch (error) {
       console.error('Error connecting to API:', error);
       // Handle errors
     }
   };
 
+  useEffect(() => {
+    if (apiData) {
+      console.log('Successfully fetched API data:', apiData);
+    }
+  }, [apiData]);
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <div className="container mx-auto">

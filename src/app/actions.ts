@@ -39,6 +39,9 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
 
   const userQuery = validatedQuery.data.query;
 
+  // Access the stored API data
+  const apiData = (global as any).apiData;
+
   try {
     // Step 1: Call the main agent to determine action type
     const mainAgentInput: MainAgentInput = { query: userQuery };
@@ -57,7 +60,7 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
         };
       case 'workforce':
         const wfInput: WorkforceAgentInput = { query: mainAgentDecision.processedQuery };
-        const wfOutput = await workforceAgent(wfInput);
+        const wfOutput = await workforceAgent({ ...wfInput, apiData }); // Pass apiData to the workforce agent
         return {
           id: uniqueId,
           userQuery,
