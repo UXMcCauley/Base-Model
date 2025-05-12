@@ -7,6 +7,7 @@ import { workforceAgent, WorkforceAgentInput, WorkforceAgentOutput } from '@/ai/
 import { summarizeEmail, SummarizeEmailInput, SummarizeEmailOutput } from '@/ai/flows/summarize-email';
 import { generateSpreadsheet, GenerateSpreadsheetInput, GenerateSpreadsheetOutput } from '@/ai/flows/generate-spreadsheet';
 import { z } from 'zod';
+import cache from '../lib/server-cache'; // Import the cache
 
 export interface AgentResponse {
   id: string;
@@ -39,10 +40,51 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
 
   const userQuery = validatedQuery.data.query;
 
+  // --- Logging ---
+  console.log("Received user query:", userQuery);
+  // -------------
+
+  // Retrieve the user's session ID (Replace with your actual session ID retrieval logic)
+  // This is a placeholder and needs to be replaced with your actual session management logic
+  // to get a unique session ID for the current user.
+  const sessionId = 'your_session_id'; // Placeholder
+  const cachedData = cache[sessionId]; // Retrieve data and tone from cache
+
+  // Destructure retrieved data to get apiData and selectedTone
+  const apiData = cachedData ? cachedData.apiData : undefined;
+  const selectedTone = cachedData ? cachedData.selectedTone : undefined;
+
+  // Define keywords that trigger dataset name recognition
+  const datasetKeywords = ["information", "data", "knowledge", "details", "report"];
+
+  let datasetName: string | undefined;
+  let processedQueryWithoutDatasetName = userQuery;
+
+  // Attempt to extract dataset name from the query
+  for (const keyword of datasetKeywords) {
+    const keywordIndex = userQuery.toLowerCase().indexOf(keyword);
+    if (keywordIndex !== -1) {
+      // Assume the dataset name follows the keyword
+      const potentialDatasetName = userQuery.substring(keywordIndex + keyword.length).trim();
+      if (potentialDatasetName) {
+        // For simplicity, take the rest of the string as the dataset name.
+        // More sophisticated parsing might be needed for complex queries.
+        datasetName = potentialDatasetName;
+        processedQueryWithoutDatasetName = userQuery.substring(0, keywordIndex).trim();
+        break; // Stop after finding the first keyword and potential dataset name
+      }
+    }
+  }
+
+  // --- Logging ---
+  console.log("Attempting to retrieve data for session ID:", sessionId, "and dataset name:", datasetName);
+  // -------------
+
+
   try {
     // Step 1: Call the main agent to determine action type
     const mainAgentInput: MainAgentInput = { query: userQuery };
-    const mainAgentDecision = await mainAgent(mainAgentInput);
+    const mainAgentDecision = await mainAgent(mainAgentInput); // Consider passing selectedTone to mainAgent if it influences routing
 
     // Step 2: Based on decision, call the appropriate specialized agent or return general response
     switch (mainAgentDecision.actionType) {
@@ -56,8 +98,33 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
           content: hrOutput.answer,
         };
       case 'workforce':
-        const wfInput: WorkforceAgentInput = { query: mainAgentDecision.processedQuery };
-        const wfOutput = await workforceAgent(wfInput);
+        // Retrieve the specific dataset by name if a name was extracted
+        let specificApiData = undefined;
+        if (datasetName) {
+            specificApiData = cache[sessionId]?.[datasetName]?.apiData;
+        } else if (apiData) {
+            // If no dataset name was specified, use the default data if available
+            specificApiData = apiData;
+        }
+
+
+        if (!specificApiData) {
+            // If no dataset is found for the extracted name or if no name was extracted and no default data exists
+            // --- Logging ---
+            console.log("Data not found for session ID:", sessionId, "and dataset name:", datasetName);
+            // -------------
+            return {
+                content: `I couldn't find the data you're referring to. Please specify which dataset you'd like to use (e.g., "Analyze the information from the Q1 Report").`,
+            };
+        }
+
+        // Use the extracted dataset name in the query passed to the workforce agent if needed for context
+        const wfInput: WorkforceAgentInput = { query: processedQueryWithoutDatasetName || userQuery }; // Pass the query without the dataset name part if extracted
+        const wfOutput = await workforceAgent({ ...wfInput, apiData, selectedTone }); // Pass apiData and selectedTone to the workforce agent
+        // --- Logging ---
+        // Log that data was found and agent is processing
+        console.log("Data found for session ID:", sessionId, "and dataset name:", datasetName || 'default');
+        // -------------
         return {
           id: uniqueId,
           userQuery,
