@@ -1,8 +1,8 @@
 // src/components/agent-interaction.tsx
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useRef, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { processUserQuery, type AgentResponse } from '@/app/actions';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ function SubmitButton() {
 
 export function AgentInteraction() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
-  const [formState, formAction] = useFormState(processUserQuery, initialState);
+  const [formState, formAction, isFormActionPending] = useActionState(processUserQuery, initialState);
   
   const formRef = useRef<HTMLFormElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -90,7 +90,7 @@ export function AgentInteraction() {
         });
       }
     }
-  }, [formState, toast]);
+  }, [formState, toast, conversation]);
 
 
   useEffect(() => {
@@ -129,9 +129,9 @@ export function AgentInteraction() {
     formRef.current?.reset();
   };
   
-  // isLoading for the form based on whether any message is currently in a loading state
-  // This is different from useFormStatus().pending which is only true during form submission.
+  // isLoading for the form based on whether any message is currently in a loading state (optimistic UI)
   const isAnyMessageLoading = conversation.some(entry => !entry.isUser && entry.data.type === 'loading');
+  const isInputDisabled = isAnyMessageLoading || isFormActionPending;
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] w-full bg-card p-4 rounded-xl shadow-xl">
@@ -151,12 +151,12 @@ export function AgentInteraction() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              if (formRef.current && !isAnyMessageLoading) { // Check !isAnyMessageLoading before submitting with Enter
+              if (formRef.current && !isInputDisabled) { 
                 formRef.current.requestSubmit();
               }
             }
           }}
-          disabled={isAnyMessageLoading} // Disable textarea if any message is loading
+          disabled={isInputDisabled} 
         />
         <SubmitButton />
       </form>
