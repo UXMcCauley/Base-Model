@@ -19,7 +19,6 @@ export default function ConfigurationPage() {
   useEffect(() => {
     let url = selectedUrlPattern;
     url = url.replace('{{base_url}}', baseUrl);
-    url = url.replace('{object_name}', objectId);
     url = url.replace('{object_name}', objectName);
     setAssembledUrl(url);
   }, [selectedUrlPattern, baseUrl, objectName]);

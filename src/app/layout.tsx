@@ -22,18 +22,12 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode; 
-}>) {
+}>) { 
   return (
     <html lang="en" className={`${geistSans.variable} dark`}>
       <head>
-        {/* Add your header content here */}
-
- <nav className="p-4">
- <Link href="/">Home</Link> | <Link href="/test-api">Test API</Link>
- </nav>
- </header>
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`${geistSans.variable} font-sans antialiased`}>
         {children}
  <header>
  <nav className="p-4">
