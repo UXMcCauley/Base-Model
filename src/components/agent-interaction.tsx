@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useFormStatus, startTransition } from 'react-dom';
 import { processUserQuery, type AgentResponse } from '@/app/actions';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';

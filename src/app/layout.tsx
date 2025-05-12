@@ -2,6 +2,7 @@
 import type {Metadata} from 'next';
 import { GeistSans } from 'geist/font/sans';
 // import { GeistMono } from 'geist/font/mono'; // Removed as it's not used and to simplify font handling
+import Link from 'next/link';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
@@ -20,12 +21,25 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode; 
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable}`}>
+    <html lang="en" className={`${geistSans.variable} dark`}>
+      <head>
+        {/* Add your header content here */}
+
+ <nav className="p-4">
+ <Link href="/">Home</Link> | <Link href="/test-api">Test API</Link>
+ </nav>
+ </header>
+      </head>
       <body className={`font-sans antialiased`}>
         {children}
+ <header>
+ <nav className="p-4">
+ <Link href="/">Home</Link> | <Link href="/config">API Configuration</Link>
+ </nav>
+ </header>
         <Toaster />
       </body>
     </html>
