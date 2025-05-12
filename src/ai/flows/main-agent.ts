@@ -12,12 +12,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const MainAgentInputSchema = z.object({
+const MainAgentInputSchema = z.object({
   query: z.string().describe('The user\'s natural language query.'),
 });
 export type MainAgentInput = z.infer<typeof MainAgentInputSchema>;
 
-export const MainAgentOutputSchema = z.object({
+const MainAgentOutputSchema = z.object({
   actionType: z.enum(['hr', 'workforce', 'summarize_email', 'generate_spreadsheet', 'generate_document_outline', 'general_response'])
     .describe('The type of action identified by the agent.'),
   processedQuery: z.string().describe('The query, rephrased or extracted data for the specific tool, or the direct answer for general queries. For summarize_email, this should be the email content if provided, or a request for it. For generate_document_outline, this should be the topic or description.'),
