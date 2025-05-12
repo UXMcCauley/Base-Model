@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useActionState } from 'react';
-import { useFormStatus, startTransition } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { processUserQuery, type AgentResponse } from '@/app/actions';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,32 @@ function SubmitButton() {
 
 export function AgentInteraction() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
-  const [formState, formAction, isFormActionPending] = useActionState(processUserQuery, initialState);
-  
+  // const [formState, formAction, isFormActionPending] = useActionState(processUserQuery, initialState);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [formState, setFormState] = useState();
+
+const handleConnect = async (event: React.FormEvent) => {
+  event.preventDefault();
+  const formData = new FormData(formRef.current!);
+  const prompt = formData.get("prompt")?.toString() ?? "";
+
+  setLoading(true);
+  try {
+    const res = await fetch("/api/respond", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, userId: "117250109947479230497" }) // or dynamically insert userId
+    });
+
+    const data: AgentResponse = await res.json();
+    setConversation(prev => [...prev, { id: Date.now().toString(), isUser: false, data }]);
+  } catch (err) {
+    toast({ title: "Error", description: "Something went wrong." });
+  } finally {
+    setLoading(false);
+  }
+}
   const formRef = useRef<HTMLFormElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();

@@ -40,6 +40,10 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
 
   const userQuery = validatedQuery.data.query;
 
+  // --- Logging ---
+  console.log("Received user query:", userQuery);
+  // -------------
+
   // Retrieve the user's session ID (Replace with your actual session ID retrieval logic)
   // This is a placeholder and needs to be replaced with your actual session management logic
   // to get a unique session ID for the current user.
@@ -72,6 +76,10 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
     }
   }
 
+  // --- Logging ---
+  console.log("Attempting to retrieve data for session ID:", sessionId, "and dataset name:", datasetName);
+  // -------------
+
 
   try {
     // Step 1: Call the main agent to determine action type
@@ -91,14 +99,21 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
         };
       case 'workforce':
         // Retrieve the specific dataset by name if a name was extracted
-        const specificApiData = datasetName ? cache[sessionId]?.[datasetName]?.apiData : apiData;
+        let specificApiData = undefined;
+        if (datasetName) {
+            specificApiData = cache[sessionId]?.[datasetName]?.apiData;
+        } else if (apiData) {
+            // If no dataset name was specified, use the default data if available
+            specificApiData = apiData;
+        }
+
 
         if (!specificApiData) {
             // If no dataset is found for the extracted name or if no name was extracted and no default data exists
+            // --- Logging ---
+            console.log("Data not found for session ID:", sessionId, "and dataset name:", datasetName);
+            // -------------
             return {
-                id: uniqueId,
-                userQuery,
-                type: 'text',
                 content: `I couldn't find the data you're referring to. Please specify which dataset you'd like to use (e.g., "Analyze the information from the Q1 Report").`,
             };
         }
@@ -106,6 +121,10 @@ export async function processUserQuery(prevState: AgentResponse | null, formData
         // Use the extracted dataset name in the query passed to the workforce agent if needed for context
         const wfInput: WorkforceAgentInput = { query: processedQueryWithoutDatasetName || userQuery }; // Pass the query without the dataset name part if extracted
         const wfOutput = await workforceAgent({ ...wfInput, apiData, selectedTone }); // Pass apiData and selectedTone to the workforce agent
+        // --- Logging ---
+        // Log that data was found and agent is processing
+        console.log("Data found for session ID:", sessionId, "and dataset name:", datasetName || 'default');
+        // -------------
         return {
           id: uniqueId,
           userQuery,

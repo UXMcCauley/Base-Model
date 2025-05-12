@@ -9,6 +9,7 @@ declare global {
 export async function POST(req: NextRequest) {
   try {
     const data: { apiData: any; selectedTone: string } = await req.json();
+    const dataSetName = data.dataSetName;
     // Retrieve the user's session ID (replace with your actual session ID retrieval logic)
     const sessionId = 'your-session-id'; // Replace with your session ID retrieval logic
 
@@ -17,8 +18,10 @@ export async function POST(req: NextRequest) {
       cache[sessionId] = {};
     }
 
-    // Store the data using the dataSetName as the key
-    cache[sessionId][data.dataSetName] = { apiData: data.apiData, selectedTone: data.selectedTone };
+    // Store the data using the dataSetName as the key and log
+    cache[sessionId][dataSetName] = { apiData: data.apiData, selectedTone: data.selectedTone };
+    console.log(`[API] Data stored for session ID: ${sessionId}, dataset: ${dataSetName}`);
+
     return NextResponse.json({ message: 'Data stored successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error storing data:', error);
