@@ -17,6 +17,10 @@ export default function ConfigurationPage() {
   const [assembledUrl, setAssembledUrl] = useState('');
   const [accessToken, setAccessToken] = useState(''); // State for access token for demonstration
   const [apiData, setApiData] = useState<any>(null); // State to store API data
+  const [selectedTone, setSelectedTone] = useState('Professional'); // State for selected tone
+  const [isLoading, setIsLoading] = useState(false); // State to track loading status
+  const [feedbackMessage, setFeedbackMessage] = useState(''); // State for feedback message
+  const [dataSetName, setDataSetName] = useState(''); // State for the data set name
 
   useEffect(() => {
     let url;
@@ -35,6 +39,9 @@ export default function ConfigurationPage() {
   };
 
   const handleConnect = async () => {
+    setIsLoading(true);
+    setFeedbackMessage('Sending...');
+
     // Here you would implement your API call logic
     console.log("NOTE: In a real application, retrieve the access token securely, e.g., from a state management solution or a secure storage mechanism.");
     console.log('Attempting to connect to:', assembledUrl);
@@ -53,6 +60,7 @@ export default function ConfigurationPage() {
       }
 
       const fetchedData = await response.json();
+      setFeedbackMessage('Sent!');
       setApiData(fetchedData);
       // Handle the API response
 
@@ -62,13 +70,16 @@ export default function ConfigurationPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(fetchedData),
+        body: JSON.stringify({ apiData: fetchedData, tone: selectedTone, dataSetName }),
       });
 
       if (!storeDataResponse.ok) { throw new Error(`Error storing data: ${storeDataResponse.status}`); }
     } catch (error) {
       console.error('Error connecting to API:', error);
+      setFeedbackMessage('Error sending data.');
       // Handle errors
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -136,17 +147,33 @@ export default function ConfigurationPage() {
           />
         </div>
 
+        <div className="mb-4">
+          <label htmlFor="dataSetName" className="block text-sm font-medium text-gray-300 mb-2">Data Set Name:</label>
+          <input
+            type="text"
+            id="dataSetName"
+            value={dataSetName}
+            onChange={(e) => setDataSetName(e.target.value)}
+            className="block w-full px-3 py-2 border border-gray-700 bg-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100"
+            placeholder="e.g., Workforce Data Q1 2023"
+          />
+        </div>
+
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Assembled URL:</h2>
           <p className="p-3 border border-gray-700 bg-gray-800 rounded-md break-all text-gray-300">{assembledUrl}</p>
         </div>
 
         <button
+          disabled={isLoading || assembledUrl === ''}
           onClick={handleConnect}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          className={`px-6 py-3 rounded-md font-bold focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+            isLoading || assembledUrl === '' ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white'
+          }`}
         >
-          Connect
+          {isLoading ? 'Connecting...' : 'Connect'}
         </button>
+        {feedbackMessage && <p className="mt-2 text-sm text-gray-400">{feedbackMessage}</p>}
 
         <div className="mt-8">
           <Link href="/">
